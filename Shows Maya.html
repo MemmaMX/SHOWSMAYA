@@ -119,9 +119,8 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      justify-content: flex-start;
+      justify-content: center;
       flex-wrap: nowrap;
-      margin-bottom: 14px;
     }
 
     .btn-lang {
@@ -168,6 +167,34 @@
     .btn-lang.bounce {
       animation: langBounce 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
+
+    /* Puntos de carga mientras espera traducción */
+    @keyframes langDot {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+      40%            { opacity: 1;   transform: scale(1.1); }
+    }
+
+    .btn-lang.cargando-lang {
+      background: rgba(24, 79, 91, 0.7);
+      border-color: rgba(50, 166, 154, 0.6);
+      color: #8fcfda;
+      cursor: wait;
+      pointer-events: none;
+    }
+
+    .btn-lang.cargando-lang .dot {
+      display: inline-block;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: currentColor;
+      margin: 0 1px;
+      animation: langDot 1.2s ease-in-out infinite;
+      vertical-align: middle;
+    }
+
+    .btn-lang.cargando-lang .dot:nth-child(2) { animation-delay: 0.2s; }
+    .btn-lang.cargando-lang .dot:nth-child(3) { animation-delay: 0.4s; }
 
     /* ── CONCIERGE SECTION ── */
     .concierge-section {
@@ -615,12 +642,15 @@
       </div>
 
       <!-- Languages (cada uno copia directamente en su idioma) -->
-      <div class="lang-row">
-        <button class="btn-lang" data-lang="es" data-label="Español">Español</button>
-        <button class="btn-lang" data-lang="en" data-label="Inglés">Inglés</button>
-        <button class="btn-lang" data-lang="fr" data-label="Francés">Francés</button>
-        <button class="btn-lang" data-lang="de" data-label="Alemán">Alemán</button>
-        <button class="btn-lang" data-lang="pt" data-label="Portugués">Portugués</button>
+      <div class="concierge-section">
+        <div class="concierge-label">Seleccionar idioma para copiar mensaje</div>
+        <div class="lang-row">
+          <button class="btn-lang" data-lang="es" data-label="Español">Español</button>
+          <button class="btn-lang" data-lang="en" data-label="Inglés">Inglés</button>
+          <button class="btn-lang" data-lang="fr" data-label="Francés">Francés</button>
+          <button class="btn-lang" data-lang="de" data-label="Alemán">Alemán</button>
+          <button class="btn-lang" data-lang="pt" data-label="Portugués">Portugués</button>
+        </div>
       </div>
 
       <!-- Concierge Buttons -->
@@ -800,6 +830,7 @@
       if (btn._bounceTimeout) {
         clearTimeout(btn._bounceTimeout);
       }
+      btn.classList.remove('cargando-lang');
       btn.textContent = 'Copiado';
       btn.classList.remove('bounce');
       void btn.offsetWidth;
@@ -837,8 +868,13 @@
       return Promise.resolve();
     }
 
+    function mostrarCargando(btn) {
+      btn.classList.add('cargando-lang');
+      btn.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+    }
+
     function ejecutarCopiaConIdioma(btn) {
-      if (btn.classList.contains('copiado-lang')) return;
+      if (btn.classList.contains('copiado-lang') || btn.classList.contains('cargando-lang')) return;
 
       var lang  = btn.getAttribute('data-lang');
       var label = btn.getAttribute('data-label');
@@ -856,6 +892,7 @@
         return;
       }
 
+      mostrarCargando(btn);
       var show = showInput || '[nombre del show]';
       var lugar = lugarInput || '[lugar]';
       var hora = horaInput || '[hora]';
