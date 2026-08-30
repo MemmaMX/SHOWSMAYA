@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shows Maya</title>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    :root {
+      --maya-color: #184f5b;
+      --lindo-color: #32a69a;
+      --selected-color: #0dc6d4;
+      --sb-track-color: #232E33;
+      --sb-thumb-color: #6BAF8D;
+      --sb-size: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      height: 100%;
+      width: 100%;
+    }
+
+    body {
+      height: 100%;
+      width: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    /* ── SCROLLBAR CUSTOM ── */
+    body::-webkit-scrollbar {
+      width: var(--sb-size);
+    }
+    body::-webkit-scrollbar-track {
+      background: var(--sb-track-color);
+      border-radius: 3px;
+    }
+    body::-webkit-scrollbar-thumb {
+      background: var(--sb-thumb-color);
+      border-radius: 3px;
+    }
+    @supports not selector(::-webkit-scrollbar) {
+      body {
+        scrollbar-color: var(--sb-thumb-color) var(--sb-track-color);
+      }
+    }
+
+    /* ── BACKGROUND SLIDER ── */
+    .bg-slider {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .bg-slide {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      opacity: 0;
+      transition: opacity 1.2s ease-in-out;
+    }
+
+    .bg-slide.active {
+      opacity: 1;
+    }
+
+    .bg-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 30, 40, 0.55);
+      z-index: 1;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main-wrapper {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 20px 10px 30px;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: rgba(10, 28, 38, 0.93);
+      border: 1px solid rgba(50, 166, 154, 0.25);
+      border-radius: 16px;
+      padding: 24px 22px 22px;
+      width: 520px;
+      max-width: 100%;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+    }
+
+    /* ── HEADER ── */
+    .card-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      font-family: 'Century Gothic', 'Trebuchet MS', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: #ffffff;
+      text-align: center;
+    }
+
+    /* ── TOP ACTIONS: LANGUAGE + COPY ── */
+    .top-actions-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .lang-row {
+      display: flex;
+      gap: 4px;
+      justify-content: flex-start;
+      flex-wrap: nowrap;
+    }
+
+    .btn-lang {
+      padding: 5px 10px;
+      border: 1.5px solid rgba(50, 166, 154, 0.4);
+      border-radius: 8px;
+      background: rgba(24, 79, 91, 0.4);
+      color: #8fcfda;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: transform 0.45s cubic-bezier(0.34, 1.8, 0.64, 1),
+                  box-shadow 0.35s ease,
+                  background 0.25s ease,
+                  border-color 0.25s ease,
+                  color 0.25s ease;
+      white-space: nowrap;
+    }
+
+    .btn-lang:hover {
+      transform: scale(1.1) translateY(-3px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.2);
+      border-color: rgba(50, 166, 154, 0.8);
+      color: #c9ecf4;
+    }
+
+    .btn-lang.active {
+      background: var(--selected-color);
+      border-color: var(--selected-color);
+      color: #ffffff;
+      box-shadow: 0 0 14px rgba(13, 198, 212, 0.5);
+    }
+
+    /* Botón copiar en la esquina derecha */
+    .btn-copiar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      min-width: 90px;
+      background: #184f5b;
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: visible;
+      text-overflow: clip;
+      transition: transform 0.45s cubic-bezier(0.34, 1.8, 0.64, 1),
+                  background 0.3s ease,
+                  box-shadow 0.3s ease;
+    }
+
+    .btn-copiar:hover {
+      transform: scale(1.04) translateY(-2px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+    }
+
+    .btn-copiar:active {
+      transform: scale(0.98);
+    }
+
+    .btn-copiar.copiado {
+      background: #00BFFF;
+      transform: scale(1.08) translateY(-2px);
+      box-shadow: 0 0 22px rgba(0, 191, 255, 0.8), 0 0 50px rgba(0, 191, 255, 0.5), 0 12px 24px rgba(0, 191, 255, 0.35);
+    }
+
+    /* ── CONCIERGE SECTION ── */
+    .concierge-section {
+      margin-bottom: 14px;
+    }
+
+    .concierge-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: #ffffff;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .concierge-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .btn-concierge {
+      padding: 6px 12px;
+      border: 1.5px solid rgba(50, 166, 154, 0.4);
+      border-radius: 8px;
+      background: rgba(24, 79, 91, 0.4);
+      color: #c9ecf4;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: transform 0.45s cubic-bezier(0.34, 1.8, 0.64, 1),
+                  box-shadow 0.35s ease,
+                  background 0.25s ease,
+                  border-color 0.25s ease,
+                  color 0.25s ease;
+      white-space: nowrap;
+    }
+
+    .btn-concierge:hover {
+      transform: scale(1.1) translateY(-3px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.2);
+      border-color: rgba(50, 166, 154, 0.8);
+    }
+
+    .btn-concierge.selected {
+      background: var(--selected-color);
+      border-color: var(--selected-color);
+      color: #ffffff;
+      box-shadow: 0 0 14px rgba(13, 198, 212, 0.5);
+    }
+
+    /* ── SORTABLE BOXES ── */
+    .sortable-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .input-box {
+      background: #ffffff;
+      border: 1.5px solid #ccc;
+      border-radius: 10px;
+      padding: 12px 14px;
+      cursor: grab;
+      transition: border-color 0.15s;
+    }
+
+    .input-box:active {
+      cursor: grabbing;
+    }
+
+    .input-box:hover {
+      border-color: #bdbdbd;
+    }
+
+    .sortable-chosen {
+      border-color: var(--lindo-color) !important;
+      box-shadow: 0 4px 16px rgba(50, 166, 154, 0.2);
+    }
+
+    .box-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: #111111;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .drag-handle {
+      color: #444444;
+      font-size: 13px;
+      cursor: grab;
+    }
+
+    .box-input {
+      width: 100%;
+      background: #ffffff;
+      border: 1.5px solid #ccc;
+      border-radius: 8px;
+      color: #111111;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 13px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .box-input:focus {
+      border-color: var(--lindo-color);
+    }
+
+    .box-input::placeholder {
+      color: #666666;
+      font-style: italic;
+    }
+
+    .box-textarea {
+      width: 100%;
+      background: #ffffff;
+      border: 1.5px solid #ccc;
+      border-radius: 8px;
+      color: #111111;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 13px;
+      padding: 10px 12px;
+      outline: none;
+      resize: vertical;
+      transition: border-color 0.15s;
+      line-height: 1.5;
+    }
+
+    .box-textarea:focus {
+      border-color: var(--lindo-color);
+    }
+
+    .box-textarea::placeholder {
+      color: #666666;
+      font-style: italic;
+    }
+
+    @property --complete {
+      syntax: '<number>';
+      inherits: true;
+      initial-value: 0;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    #boxActividadesPrincipales.cancel-box {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transform: translateY(-10px) scale(0.98);
+      transform-origin: top center;
+      padding: 0 14px;
+      border-width: 0;
+      margin-top: -4px;
+      pointer-events: none;
+      transition: max-height 0.45s ease,
+                  opacity 0.28s ease,
+                  transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  padding 0.32s ease,
+                  border-width 0.2s ease,
+                  margin 0.32s ease;
+    }
+
+    #boxActividadesPrincipales.cancel-box.show {
+      max-height: 320px;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      padding: 12px 14px;
+      border-width: 1.5px;
+      margin-top: 0;
+      pointer-events: auto;
+    }
+
+    /* ── CANCELACIONES – liquid toggle ── */
+    .cancel-row {
+      display: flex;
+      justify-content: center;
+      padding-top: 10px;
+      padding-bottom: 4px;
+    }
+
+    .cancel-label {
+      --complete: 0;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      background: transparent;
+      border: 0;
+      padding: 0;
+      font: inherit;
+      color: inherit;
+      transition: --complete 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  transform 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .cancel-label:focus-visible {
+      outline: 2px solid rgba(201, 236, 244, 0.95);
+      outline-offset: 7px;
+      border-radius: 18px;
+    }
+
+    .cancel-label:active {
+      transform: scale(0.985);
+    }
+
+    .cancel-label-text {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .cancel-label[data-active='true'] {
+      --complete: 100;
+    }
+
+    .liquid-toggle {
+      --unchecked: hsl(200, 15%, 45%);
+      --toggle-checked: color-mix(in srgb, var(--unchecked) calc(100% - (var(--complete) * 1%)), #DB3414 calc(var(--complete) * 1%));
+      --border: 4px;
+      --width: 90;
+      --height: 38;
+      position: relative;
+      height: calc(var(--height) * 1px);
+      width: calc(var(--width) * 1px);
+      border-radius: 100px;
+      padding: 0;
+      overflow: visible;
+      container-type: inline-size;
+      background: transparent;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+    }
+
+    .liquid-toggle,
+    .liquid-toggle * {
+      pointer-events: none;
+    }
+
+    .indicator,
+    .indicator--masked {
+      border-radius: 100px;
+      height: 100%;
+      width: 100%;
+      background: var(--toggle-checked);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      translate: -50% -50%;
+      transition: background 0.2s ease-out;
+    }
+
+    .knockout {
+      position: absolute;
+      inset: 0;
+      height: calc(var(--height) * 1px);
+      width: calc(var(--width) * 1px);
+      border-radius: 100px;
+      filter: url(#remove-black);
+      transform: translate3d(0, 0, 0);
+      will-change: filter;
+    }
+
+    .indicator--masked {
+      z-index: 12;
+      container-type: inline-size;
+    }
+
+    .indicator--masked .mask {
+      position: absolute;
+      top: 50%;
+      left: var(--border);
+      height: calc(100% - (2 * var(--border)));
+      width: calc(60% - (2 * var(--border)));
+      margin-left: 0;
+      background: #000;
+      border-radius: 100px;
+      translate: calc((var(--complete) / 100) * (100cqi - 60cqi)) -50%;
+      transition: translate 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  height 0.2s ease-out,
+                  width 0.2s ease-out,
+                  margin 0.2s ease-out,
+                  scale 0.2s ease-out;
+      will-change: translate, height, width, margin;
+    }
+
+    .wrapper {
+      position: absolute;
+      inset: 0;
+      border-radius: 100px;
+      clip-path: inset(0 0 0 0 round 100px);
+      filter: blur(6px);
+      transition: filter 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .liquids {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      border-radius: 100px;
+      filter: url(#goo);
+      transform: translate3d(0, 0, 0);
+    }
+
+    .liquid__shadow {
+      position: absolute;
+      inset: 0;
+      border-radius: 100px;
+      box-shadow: inset 0 0 3px 4px var(--toggle-checked),
+                  inset calc(((var(--complete) / 100) * 8px) - 4px) 0 3px 4px var(--toggle-checked);
+      transition: box-shadow 0.2s ease-out;
+    }
+
+    .liquid__track {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      height: calc((var(--height) * 1px) - (0 * var(--border)));
+      width: calc((var(--width) * 1px) - (0 * var(--border)));
+      background: var(--toggle-checked);
+      border-radius: 100px;
+      translate: calc((var(--complete) / 100) * (100cqi - 100% - (6 * var(--border)))) -50%;
+      transition: translate 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  height 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  background 0.2s ease-out;
+    }
+
+    .indicator__liquid {
+      position: absolute;
+      top: 50%;
+      left: var(--border);
+      height: calc(100% - (2 * var(--border)));
+      width: calc(60% - (2 * var(--border)));
+      container-type: inline-size;
+      border-radius: 100px;
+      background: transparent;
+      translate: calc((var(--complete) / 100) * (100cqi - 100% - (2 * var(--border)))) -50%;
+      transition: translate 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  scale 0.2s ease-out;
+    }
+
+    .indicator__liquid .shadow,
+    .indicator__liquid .cover {
+      position: absolute;
+      inset: 0;
+      border-radius: 100px;
+      transition: opacity 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .indicator__liquid .shadow {
+      opacity: 0;
+      box-shadow: 1px -1px 2px hsl(0 0% 100% / 0.5) inset,
+                  0 -1px 2px hsl(0 0% 100% / 0.5) inset,
+                  -1px -1px 2px hsl(0 0% 100% / 0.5) inset,
+                  1px 1px 2px hsl(0 0% 30% / 0.5) inset,
+                  -8px 4px 10px -6px hsl(0 0% 30% / 0.25) inset,
+                  -1px 1px 6px hsl(0 0% 30% / 0.25) inset,
+                  -1px -1px 8px hsl(0 0% 60% / 0.15),
+                  1px 1px 2px hsl(0 0% 30% / 0.15),
+                  2px 2px 6px hsl(0 0% 30% / 0.15),
+                  -2px -1px 2px hsl(0 0% 100% / 0.25) inset,
+                  3px 6px 16px -6px hsl(0 0% 30% / 0.5);
+      z-index: 2;
+    }
+
+    .indicator__liquid .cover {
+      background: #ffffff;
+    }
+
+    .cancel-label[data-active='true'] .indicator--masked .mask,
+    .cancel-label:active .indicator--masked .mask {
+      height: calc((100% - (2 * var(--border))) * 1.45);
+      width: calc((60% - (2 * var(--border))) * 1.45);
+      margin-left: calc((60% - (2 * var(--border))) * -0.225);
+    }
+
+    .cancel-label[data-active='true'] .indicator__liquid,
+    .cancel-label:active .indicator__liquid {
+      scale: 1.38 1.18;
+    }
+
+    .cancel-label[data-active='true'] .wrapper,
+    .cancel-label:active .wrapper {
+      filter: blur(0);
+    }
+
+    .cancel-label[data-active='true'] .indicator__liquid .shadow,
+    .cancel-label:active .indicator__liquid .shadow {
+      opacity: 1;
+    }
+
+    .cancel-label[data-active='true'] .indicator__liquid .cover,
+    .cancel-label:active .indicator__liquid .cover {
+      opacity: 0;
+    }
+
+    .cancel-label[data-active='true'] .indicator__liquid .liquid__track,
+    .cancel-label:active .indicator__liquid .liquid__track {
+      left: calc(var(--border) * 3);
+      height: calc((var(--height) * 1px) - (6 * var(--border)));
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Slider -->
+  <div class="bg-slider" id="bgSlider">
+    <div class="bg-slide active" style="background-image: url('https://lh3.googleusercontent.com/d/1yiLtxHlxCx_RoiZq3Dqo7cBQ8MJ04VhP')"></div>
+    <div class="bg-slide" style="background-image: url('https://lh3.googleusercontent.com/d/1xMkC2A9KbPMXq7s2RGBxIalDqk6FnCpk')"></div>
+    <div class="bg-slide" style="background-image: url('https://lh3.googleusercontent.com/d/1nHfPpQm9mM4OlzDkC7nLBoFDc6A7TaR2')"></div>
+  </div>
+  <div class="bg-overlay"></div>
+
+  <!-- Main Card -->
+  <div class="main-wrapper">
+    <div class="card">
+
+      <!-- Header -->
+      <div class="card-header">
+        <div class="card-title">SHOWS MAYA</div>
+      </div>
+
+      <!-- Languages + Copy button -->
+      <div class="top-actions-row">
+        <div class="lang-row">
+          <button class="btn-lang" data-lang="es">Español</button>
+          <button class="btn-lang" data-lang="en">Inglés</button>
+          <button class="btn-lang" data-lang="fr">Francés</button>
+          <button class="btn-lang" data-lang="de">Alemán</button>
+          <button class="btn-lang" data-lang="pt">Portugués</button>
+        </div>
+        <button class="btn-copiar" id="btnCopy">COPIAR</button>
+      </div>
+
+      <!-- Concierge Buttons -->
+      <div class="concierge-section">
+        <div class="concierge-label">Selecciona tu nombre</div>
+        <div class="concierge-grid" id="conciergeGrid">
+          <!-- botones generados por JS -->
+        </div>
+      </div>
+
+      <!-- Sortable Input Boxes -->
+      <div class="sortable-list" id="sortableList">
+
+        <div class="input-box" data-key="show">
+          <div class="box-label">
+            <span class="drag-handle">⠿</span>
+            Nombre del Show
+          </div>
+          <input class="box-input" id="inputShow" type="text" placeholder="Ej: 80's Show" autocomplete="off" />
+        </div>
+
+        <div class="input-box" data-key="lugar">
+          <div class="box-label">
+            <span class="drag-handle">⠿</span>
+            Lugar
+          </div>
+          <input class="box-input" id="inputLugar" type="text" placeholder="Ej: Teatro" autocomplete="off" />
+        </div>
+
+        <div class="input-box" data-key="hora">
+          <div class="box-label">
+            <span class="drag-handle">⠿</span>
+            Hora del Show
+          </div>
+          <input class="box-input" id="inputHora" type="text" placeholder="Ej: 9:00 PM" autocomplete="off" />
+        </div>
+
+        <div class="input-box" data-key="actividades">
+          <div class="box-label">
+            <span class="drag-handle">⠿</span>
+            ACTIVIDADES KUKULKAN
+          </div>
+          <textarea class="box-textarea" id="inputActividades" rows="6"
+            placeholder="Pega aquí la lista de actividades…"></textarea>
+        </div>
+
+        <div class="input-box cancel-box" data-key="actividades-principales" id="boxActividadesPrincipales" aria-hidden="true">
+          <div class="box-label">
+            <span class="drag-handle">⠿</span>
+            ACTIVIDADES EN EL TEATRO O PLAYA
+          </div>
+          <textarea class="box-textarea" id="inputActividadesPrincipales" rows="6"
+            placeholder="Pega aquí las actividades principales…"></textarea>
+        </div>
+
+      </div>
+
+      <!-- Cancelaciones -->
+      <div class="cancel-row">
+        <button class="cancel-label" id="btnModoFuego" type="button" aria-pressed="false" data-active="false">
+          <span class="cancel-label-text">CANCELACIONES</span>
+          <span class="liquid-toggle" role="presentation" aria-hidden="true">
+            <span class="knockout">
+              <span class="indicator indicator--masked"><span class="mask"></span></span>
+            </span>
+            <span class="indicator__liquid">
+              <span class="shadow"></span>
+              <span class="wrapper">
+                <span class="liquids">
+                  <span class="liquid__shadow"></span>
+                  <span class="liquid__track"></span>
+                </span>
+              </span>
+              <span class="cover"></span>
+            </span>
+          </span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ── REPRESENTANTES ──
+    var representantes = [
+      { nombre: 'Montserrat Rangel',      etiqueta: 'MONTSERRAT' },
+      { nombre: 'Delfino Hernández',       etiqueta: 'DELFINO' },
+      { nombre: 'Edgar Madrid',            etiqueta: 'EDGAR' },
+      { nombre: 'Clara de la Cruz',        etiqueta: 'CLARA' },
+      { nombre: 'Emanuel Hernández',       etiqueta: 'EMANUEL' },
+      { nombre: 'Rosario Arriaga',         etiqueta: 'ROSARIO' },
+      { nombre: 'Angélica Rivera',         etiqueta: 'ANGÉLICA' },
+      { nombre: 'Daniel Martinez',         etiqueta: 'DANIEL' },
+      { nombre: 'Gustavo Bolaina',         etiqueta: 'GUSTAVO' },
+      { nombre: 'Arturo Mixcoatl',         etiqueta: 'ARTURO' },
+      { nombre: 'Alberto',                 etiqueta: 'ALBERTO' },
+      { nombre: 'Gisela Zempoaltécatl',    etiqueta: 'GISELA Z.' },
+      { nombre: 'Ethan López',             etiqueta: 'ETHAN' },
+      { nombre: 'Omar Alonso',             etiqueta: 'OMAR' },
+      { nombre: 'Gisela Monserrat',        etiqueta: 'GISELA M.' },
+      { nombre: 'Javier Carballo',         etiqueta: 'JAVIER' },
+      { nombre: 'Raúl Torres',             etiqueta: 'RAÚL' },
+      { nombre: 'Arlette Montaño',         etiqueta: 'ARLETTE' },
+      { nombre: 'Cynthia Turijan',         etiqueta: 'CYNTHIA' }
+    ];
+
+    var nombreSeleccionado = '';
+    var modoFuego = false;
+
+    function cargarRepresentantes() {
+      try {
+        google.script.run
+          .withSuccessHandler(function(data) {
+            if (data && data.length > 0) representantes = data;
+            renderBotones();
+          })
+          .withFailureHandler(function() { renderBotones(); })
+          .getRepresentantes();
+      } catch(e) { renderBotones(); }
+    }
+
+    function renderBotones() {
+      var grid = document.getElementById('conciergeGrid');
+      grid.innerHTML = '';
+      representantes.forEach(function(rep) {
+        var btn = document.createElement('button');
+        btn.className = 'btn-concierge';
+        btn.textContent = rep.etiqueta;
+        btn.setAttribute('data-nombre', rep.nombre);
+        btn.addEventListener('click', function() { seleccionarConcierge(btn, rep.nombre); });
+        grid.appendChild(btn);
+      });
+    }
+
+    function seleccionarConcierge(btnClicked, nombre) {
+      document.querySelectorAll('.btn-concierge').forEach(function(b) {
+        if (b !== btnClicked && b.classList.contains('selected')) {
+          b.classList.remove('selected');
+          b.style.transform = 'scale(1.0)';
+          setTimeout(function() { b.style.transform = ''; }, 10);
+        }
+      });
+      if (btnClicked.classList.contains('selected')) {
+        btnClicked.classList.remove('selected');
+        nombreSeleccionado = '';
+      } else {
+        btnClicked.classList.add('selected');
+        nombreSeleccionado = nombre;
+        btnClicked.style.transform = 'scale(1.18) translateY(-5px)';
+        setTimeout(function() { btnClicked.style.transform = ''; }, 400);
+      }
+    }
+
+    cargarRepresentantes();
+
+    // ── AUTO-LLENADO POR DÍA DE LA SEMANA ──
+    try {
+      google.script.run
+        .withSuccessHandler(function(datos) {
+          if (!datos) return;
+          if (datos.show)        document.getElementById('inputShow').value        = datos.show;
+          if (datos.lugar)       document.getElementById('inputLugar').value       = datos.lugar;
+          if (datos.hora)        document.getElementById('inputHora').value        = datos.hora;
+          if (datos.actividades) document.getElementById('inputActividades').value = datos.actividades;
+        })
+        .withFailureHandler(function() {})
+        .getDatosDiaActualShowsMaya();
+    } catch(e) {}
+
+    // ── LANGUAGE ──
+    var currentLang = 'es';
+    document.querySelectorAll('.btn-lang').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var prev = document.querySelector('.btn-lang.active');
+        if (prev && prev !== btn) {
+          prev.classList.remove('active');
+          prev.style.transform = 'scale(1.0)';
+          setTimeout(function() { prev.style.transform = ''; }, 10);
+        }
+        if (btn.classList.contains('active')) {
+          btn.classList.remove('active');
+          currentLang = 'es';
+        } else {
+          btn.classList.add('active');
+          currentLang = btn.getAttribute('data-lang');
+          btn.style.transform = 'scale(1.18) translateY(-5px)';
+          setTimeout(function() { btn.style.transform = ''; }, 400);
+        }
+      });
+    });
+
+    // ── PM AUTOMÁTICO EN HORA ──
+    document.getElementById('inputHora').addEventListener('blur', function() {
+      var val = this.value.trim();
+      if (!val) return;
+      var sinPM = val.replace(/\s*(AM|PM|am|pm)\s*$/i, '').trim();
+      if (sinPM) {
+        this.value = sinPM + ' PM';
+      }
+    });
+
+    // ── HELPERS ──
+    function toTitleCase(str) {
+      var minusculas = ['de','del','la','el','los','las','un','una','y','en','a','con','por','para'];
+      return str.toLowerCase().split(' ').map(function(word, index) {
+        if (index === 0 || minusculas.indexOf(word) === -1) {
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        }
+        return word;
+      }).join(' ');
+    }
+
+    // ── LUGAR LOCALIZADO CON ARTÍCULO SEGÚN IDIOMA ──
+    var lugaresDict = {
+      'teatro':      { es: 'el Teatro',      en: 'the Theater',    fr: 'le Théâtre',    de: 'dem Theater',         pt: 'o Teatro'          },
+      'theater':     { es: 'el Teatro',      en: 'the Theater',    fr: 'le Théâtre',    de: 'dem Theater',         pt: 'o Teatro'          },
+      'theatre':     { es: 'el Teatro',      en: 'the Theater',    fr: 'le Théâtre',    de: 'dem Theater',         pt: 'o Teatro'          },
+      'playa':       { es: 'la Playa',       en: 'the Beach',      fr: 'la Plage',      de: 'dem Strand',          pt: 'a Praia'           },
+      'beach':       { es: 'la Playa',       en: 'the Beach',      fr: 'la Plage',      de: 'dem Strand',          pt: 'a Praia'           },
+      'alberca':     { es: 'la Alberca',     en: 'the Pool',       fr: 'la Piscine',    de: 'dem Pool',            pt: 'a Piscina'         },
+      'piscina':     { es: 'la Piscina',     en: 'the Pool',       fr: 'la Piscine',    de: 'dem Pool',            pt: 'a Piscina'         },
+      'pool':        { es: 'la Piscina',     en: 'the Pool',       fr: 'la Piscine',    de: 'dem Pool',            pt: 'a Piscina'         },
+      'lobby':       { es: 'el Lobby',       en: 'the Lobby',      fr: 'le Lobby',      de: 'der Lobby',           pt: 'o Lobby'           },
+      'bar':         { es: 'el Bar',         en: 'the Bar',        fr: 'le Bar',        de: 'der Bar',             pt: 'o Bar'             },
+      'terraza':     { es: 'la Terraza',     en: 'the Terrace',    fr: 'la Terrasse',   de: 'der Terrasse',        pt: 'o Terraço'         },
+      'terrace':     { es: 'la Terraza',     en: 'the Terrace',    fr: 'la Terrasse',   de: 'der Terrasse',        pt: 'o Terraço'         },
+      'salon':       { es: 'el Salón',       en: 'the Hall',       fr: 'la Salle',      de: 'dem Saal',            pt: 'o Salão'           },
+      'salón':       { es: 'el Salón',       en: 'the Hall',       fr: 'la Salle',      de: 'dem Saal',            pt: 'o Salão'           },
+      'palapa':      { es: 'la Palapa',      en: 'the Palapa',     fr: 'la Palapa',     de: 'der Palapa',          pt: 'a Palapa'          },
+      'cenote':      { es: 'el Cenote',      en: 'the Cenote',     fr: 'le Cénote',     de: 'dem Cenote',          pt: 'o Cenote'          },
+      'jardin':      { es: 'el Jardín',      en: 'the Garden',     fr: 'le Jardin',     de: 'dem Garten',          pt: 'o Jardim'          },
+      'jardín':      { es: 'el Jardín',      en: 'the Garden',     fr: 'le Jardin',     de: 'dem Garten',          pt: 'o Jardim'          },
+      'garden':      { es: 'el Jardín',      en: 'the Garden',     fr: 'le Jardin',     de: 'dem Garten',          pt: 'o Jardim'          },
+      'escenario':   { es: 'el Escenario',   en: 'the Stage',      fr: 'la Scène',      de: 'der Bühne',           pt: 'o Palco'           },
+      'stage':       { es: 'el Escenario',   en: 'the Stage',      fr: 'la Scène',      de: 'der Bühne',           pt: 'o Palco'           },
+      'foro':        { es: 'el Foro',        en: 'the Forum',      fr: 'le Forum',      de: 'dem Forum',           pt: 'o Fórum'           },
+      'arena':       { es: 'la Arena',       en: 'the Arena',      fr: "l'Arène",       de: 'der Arena',           pt: 'a Arena'           },
+      'laguna':      { es: 'la Laguna',      en: 'the Lagoon',     fr: 'la Lagune',     de: 'der Lagune',          pt: 'a Lagoa'           },
+      'selva':       { es: 'la Selva',       en: 'the Jungle',     fr: 'la Jungle',     de: 'dem Dschungel',       pt: 'a Selva'           },
+      'restaurante': { es: 'el Restaurante', en: 'the Restaurant', fr: 'le Restaurant', de: 'dem Restaurant',      pt: 'o Restaurante'     },
+      'restaurant':  { es: 'el Restaurante', en: 'the Restaurant', fr: 'le Restaurant', de: 'dem Restaurant',      pt: 'o Restaurante'     },
+      'mirador':     { es: 'el Mirador',     en: 'the Viewpoint',  fr: 'le Mirador',    de: 'dem Aussichtspunkt',  pt: 'o Mirante'         },
+      'palacio':     { es: 'el Palacio',     en: 'the Palace',     fr: 'le Palais',     de: 'dem Palast',          pt: 'o Palácio'         },
+      'hacienda':    { es: 'la Hacienda',    en: 'the Hacienda',   fr: "l'Hacienda",    de: 'der Hacienda',        pt: 'a Hacienda'        },
+      'cascada':     { es: 'la Cascada',     en: 'the Waterfall',  fr: 'la Cascade',    de: 'dem Wasserfall',      pt: 'a Cachoeira'       }
+    };
+
+    function conLugarLocalizado(lugarRaw, lang) {
+      var l = lugarRaw.trim().toLowerCase();
+      for (var clave in lugaresDict) {
+        if (l.indexOf(clave) !== -1) {
+          return lugaresDict[clave][lang] || lugaresDict[clave]['es'];
+        }
+      }
+      var lugar = toTitleCase(lugarRaw.trim());
+      if (lang === 'en') return 'the ' + lugar;
+      if (lang === 'fr') return 'le ' + lugar;
+      if (lang === 'de') return 'dem ' + lugar;
+      if (lang === 'pt') return 'o ' + lugar;
+      return lugar;
+    }
+
+    function lugarUpperTraducido(lugarRaw, lang) {
+      var localizado = conLugarLocalizado(lugarRaw, lang);
+      return localizado.replace(/^(el |la |the |le |l'|dem |der )/i, '').toUpperCase();
+    }
+
+    // ── BULLETS ──
+    function agregarBullets(texto) {
+      var limpio = texto.trim();
+      if (limpio.charAt(0) === '"') limpio = limpio.substring(1);
+      if (limpio.charAt(limpio.length - 1) === '"') limpio = limpio.substring(0, limpio.length - 1);
+      return limpio.split('\n').map(function(linea) {
+        var l = linea.trim();
+        if (!l) return '';
+        if (l.charAt(0) === '\u2022' || l.charAt(0) === '\u00b7' || l.charAt(0) === '-' || l.charAt(0) === '*') {
+          l = l.substring(1).trim();
+        }
+        return '\u2022 ' + l;
+      }).filter(function(l) { return l !== ''; }).join('\n');
+    }
+
+    function agregarBulletsCancelaciones(texto) {
+      var limpio = texto.trim();
+      if (limpio.charAt(0) === '"') limpio = limpio.substring(1);
+      if (limpio.charAt(limpio.length - 1) === '"') limpio = limpio.substring(0, limpio.length - 1);
+      var lineas = limpio.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l !== ''; });
+      var resultado = [];
+      var i = 0;
+      var reHorario = /^\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}/;
+      while (i < lineas.length) {
+        var linea = lineas[i];
+        if (linea.charAt(0) === '\u2022' || linea.charAt(0) === '\u00b7' || linea.charAt(0) === '-' || linea.charAt(0) === '*') {
+          linea = linea.substring(1).trim();
+        }
+        if (i + 1 < lineas.length && reHorario.test(lineas[i + 1])) {
+          resultado.push('\u2022 ' + linea + ': ' + lineas[i + 1].trim());
+          i += 2;
+        } else {
+          resultado.push('\u2022 ' + linea);
+          i += 1;
+        }
+      }
+      return resultado.join('\n');
+    }
+
+    // ── LIMPIAR COMILLAS AL PEGAR ──
+    function limpiarComillasAlPegar(e) {
+      e.preventDefault();
+      var pegado = (e.clipboardData || window.clipboardData).getData('text');
+      pegado = pegado.trim();
+      if (pegado.charAt(0) === '"') pegado = pegado.substring(1);
+      if (pegado.charAt(pegado.length - 1) === '"') pegado = pegado.substring(0, pegado.length - 1);
+      var ta = e.target;
+      var start = ta.selectionStart;
+      var end = ta.selectionEnd;
+      var current = ta.value;
+      ta.value = current.substring(0, start) + pegado + current.substring(end);
+      ta.selectionStart = ta.selectionEnd = start + pegado.length;
+    }
+
+    document.getElementById('inputActividades').addEventListener('paste', limpiarComillasAlPegar);
+    document.getElementById('inputActividadesPrincipales').addEventListener('paste', limpiarComillasAlPegar);
+
+    // ── TEMPLATES ──
+    var templates = {
+      es: function(nombre, show, lugar, hora, actividades, showUpper, lugarUp) {
+        return "Estimado Huésped,\n\n" +
+          "Le saluda su concierge " + nombre + " del Departamento de Guest Service. " +
+          "Esperamos que esté disfrutando de su estancia.\n\n" +
+          "Le invitamos a nuestro show: " + show + " en " + lugar + " a las " + hora + ". " +
+          "Además, tenemos una variedad de actividades programadas que tendrán lugar en el Bar Kukulcán:\n\n" +
+          actividades + "\n\n" +
+          "--------------------------------------------\n\n" +
+          "Actividad principal en " + lugarUp + " a las " + hora + ":\n\n" +
+          "\u2022 " + showUpper + "\n\n" +
+          "Será un placer contar con su presencia en estos eventos exclusivos.\n\n" +
+          "Atentamente,\n" +
+          "Departamento de Guest Service.";
+      },
+      en: function(nombre, show, lugar, hora, actividades, showUpper, lugarUp) {
+        return "Dear Guest,\n\n" +
+          "This is your concierge " + nombre + " from the Guest Service Department. " +
+          "We hope you are enjoying your stay.\n\n" +
+          "We would like to invite you to our show: " + show + " at " + lugar + " at " + hora + ". " +
+          "Additionally, we have a variety of activities scheduled at Bar Kukulcán:\n\n" +
+          actividades + "\n\n" +
+          "--------------------------------------------\n\n" +
+          "Main activity at " + lugarUp + " at " + hora + ":\n\n" +
+          "\u2022 " + showUpper + "\n\n" +
+          "It will be a pleasure to have you at these exclusive events.\n\n" +
+          "Sincerely,\n" +
+          "Guest Service Department.";
+      },
+      fr: function(nombre, show, lugar, hora, actividades, showUpper, lugarUp) {
+        return "Cher Client,\n\n" +
+          "Votre concierge " + nombre + " du Département Guest Service vous contacte. " +
+          "Nous espérons que vous profitez pleinement de votre séjour.\n\n" +
+          "Nous vous invitons à notre show : " + show + " à " + lugar + " à " + hora + ". " +
+          "De plus, nous avons une variété d'activités programmées au Bar Kukulcán :\n\n" +
+          actividades + "\n\n" +
+          "--------------------------------------------\n\n" +
+          "Activité principale à " + lugarUp + " à " + hora + " :\n\n" +
+          "\u2022 " + showUpper + "\n\n" +
+          "Ce sera un plaisir de vous accueillir lors de ces événements exclusifs.\n\n" +
+          "Cordialement,\n" +
+          "Département Guest Service.";
+      },
+      de: function(nombre, show, lugar, hora, actividades, showUpper, lugarUp) {
+        return "Lieber Gast,\n\n" +
+          "Ihr Concierge " + nombre + " vom Guest Service Department meldet sich bei Ihnen. " +
+          "Wir hoffen, dass Sie Ihren Aufenthalt genießen.\n\n" +
+          "Wir möchten Sie herzlich zu unserer Show einladen: " + show + " in " + lugar + " um " + hora + ". " +
+          "Außerdem haben wir eine Vielzahl von Aktivitäten in der Bar Kukulcán geplant:\n\n" +
+          actividades + "\n\n" +
+          "--------------------------------------------\n\n" +
+          "Hauptaktivität in " + lugarUp + " um " + hora + ":\n\n" +
+          "\u2022 " + showUpper + "\n\n" +
+          "Es wird uns eine Freude sein, Sie bei diesen exklusiven Veranstaltungen begrüßen zu dürfen.\n\n" +
+          "Mit freundlichen Grüßen,\n" +
+          "Guest Service Department.";
+      },
+      pt: function(nombre, show, lugar, hora, actividades, showUpper, lugarUp) {
+        return "Prezado Hóspede,\n\n" +
+          "Este é seu concierge " + nombre + " do Departamento de Guest Service. " +
+          "Esperamos que esteja aproveitando sua estadia.\n\n" +
+          "Gostaríamos de convidá-lo para nosso show: " + show + " em " + lugar + " às " + hora + ". " +
+          "Além disso, temos uma variedade de atividades programadas no Bar Kukulcán:\n\n" +
+          actividades + "\n\n" +
+          "--------------------------------------------\n\n" +
+          "Atividade principal em " + lugarUp + " às " + hora + ":\n\n" +
+          "\u2022 " + showUpper + "\n\n" +
+          "Será um prazer tê-lo nesses eventos exclusivos.\n\n" +
+          "Atenciosamente,\n" +
+          "Departamento de Guest Service.";
+      }
+    };
+
+    var templatesFuego = {
+      es: function(nombre, actividadesPrincipales, actividades) {
+        return "Estimado huésped,\n\n" +
+          "Reciba un cordial saludo de parte de " + nombre + " Concierge del Departamento de Guest Service.\n\n" +
+          "El motivo de nuestro mensaje es informar que debido a cambios climáticos, nuestro actividad Show de Fuego en la playa ha sido cancelado el día de hoy. Nos gustaría invitarle al teatro donde tenemos preparadas las siguientes actividades:\n\n" +
+          actividadesPrincipales + "\n\n" +
+          "Además, a lo largo de la noche se celebrarán diversas actividades exclusivas en el bar Kukulkán.\n\n" +
+          actividades + "\n\n" +
+          "Estaremos encantados de que se una a nosotros y esperamos darle la bienvenida.\n\n" +
+          "Saludos\n" +
+          "Guest Service";
+      },
+      en: function(nombre, actividadesPrincipales, actividades) {
+        return "Dear Guest,\n\n" +
+          "Please receive warm regards from " + nombre + ", Concierge of the Guest Service Department.\n\n" +
+          "We are writing to inform you that due to weather changes, our Fire Show on the beach has been cancelled today. We would like to invite you to the theater where we have prepared the following activities:\n\n" +
+          actividadesPrincipales + "\n\n" +
+          "Throughout the evening, various exclusive activities will be held at the Kukulkán bar.\n\n" +
+          actividades + "\n\n" +
+          "We would be delighted to have you join us and look forward to welcoming you.\n\n" +
+          "Best regards,\n" +
+          "Guest Service";
+      },
+      fr: function(nombre, actividadesPrincipales, actividades) {
+        return "Cher Client,\n\n" +
+          "Veuillez recevoir les cordiales salutations de " + nombre + ", Concierge du Département Guest Service.\n\n" +
+          "Nous vous informons que, en raison de changements climatiques, notre spectacle de Feu sur la plage a été annulé aujourd'hui. Nous souhaitons vous inviter au théâtre où nous avons préparé les activités suivantes :\n\n" +
+          actividadesPrincipales + "\n\n" +
+          "Tout au long de la soirée, diverses activités exclusives se tiendront au bar Kukulkán.\n\n" +
+          actividades + "\n\n" +
+          "Nous serions ravis de vous accueillir parmi nous et espérons vous souhaiter la bienvenue.\n\n" +
+          "Cordialement,\n" +
+          "Guest Service";
+      },
+      de: function(nombre, actividadesPrincipales, actividades) {
+        return "Lieber Gast,\n\n" +
+          "Wir übermitteln Ihnen herzliche Grüße von " + nombre + ", Concierge der Guest Service Abteilung.\n\n" +
+          "Wir möchten Sie darüber informieren, dass aufgrund von Wetteränderungen unsere Feuershow am Strand heute abgesagt wurde. Wir möchten Sie gerne ins Theater einladen, wo wir folgende Aktivitäten vorbereitet haben:\n\n" +
+          actividadesPrincipales + "\n\n" +
+          "Im Laufe des Abends finden verschiedene exklusive Aktivitäten in der Kukulkán Bar statt.\n\n" +
+          actividades + "\n\n" +
+          "Wir würden uns sehr freuen, Sie bei uns begrüßen zu dürfen.\n\n" +
+          "Mit freundlichen Grüßen,\n" +
+          "Guest Service";
+      },
+      pt: function(nombre, actividadesPrincipales, actividades) {
+        return "Prezado Hóspede,\n\n" +
+          "Receba um cordial cumprimento de " + nombre + ", Concierge do Departamento de Guest Service.\n\n" +
+          "Informamos que devido a mudanças climáticas, nosso Show de Fogo na praia foi cancelado hoje. Gostaríamos de convidá-lo ao teatro onde temos preparadas as seguintes atividades:\n\n" +
+          actividadesPrincipales + "\n\n" +
+          "Ao longo da noite, serão realizadas diversas atividades exclusivas no bar Kukulkán.\n\n" +
+          actividades + "\n\n" +
+          "Ficaremos felizes em tê-lo conosco e esperamos recebê-lo.\n\n" +
+          "Atenciosamente,\n" +
+          "Guest Service";
+      }
+    };
+
+    function aplicarModoFuego() {
+      var box = document.getElementById('boxActividadesPrincipales');
+      var btn = document.getElementById('btnModoFuego');
+      var activeState = modoFuego ? 'true' : 'false';
+      box.classList.toggle('show', modoFuego);
+      box.setAttribute('aria-hidden', modoFuego ? 'false' : 'true');
+      btn.setAttribute('data-active', activeState);
+      btn.setAttribute('aria-pressed', activeState);
+      btn.style.setProperty('--complete', modoFuego ? '100' : '0');
+    }
+
+    document.getElementById('btnModoFuego').addEventListener('click', function() {
+      modoFuego = !modoFuego;
+      aplicarModoFuego();
+    });
+
+    aplicarModoFuego();
+
+    // ── COPY BUTTON ──
+    document.getElementById('btnCopy').addEventListener('click', function() {
+      var nombre      = nombreSeleccionado || '[nombre del concierge]';
+      var showRaw     = document.getElementById('inputShow').value.trim()        || '[nombre del show]';
+      var lugarRaw    = document.getElementById('inputLugar').value.trim()       || '[lugar]';
+      var horaRaw     = document.getElementById('inputHora').value.trim()        || '[hora]';
+      var actRaw      = document.getElementById('inputActividades').value.trim() || '[actividades]';
+      var actPrinRaw  = document.getElementById('inputActividadesPrincipales').value.trim() || '[actividades principales]';
+
+      var hora = horaRaw.replace(/\s*(AM|PM|am|pm)\s*$/i, '').trim();
+      if (hora) hora = hora + ' PM';
+      else hora = horaRaw;
+
+      var lugar       = conLugarLocalizado(lugarRaw, currentLang);
+      var lugarUp     = lugarUpperTraducido(lugarRaw, currentLang);
+      var btn         = this;
+
+      function copiarMensaje(showTraducido, actividadesTraducidas) {
+        var actividades = agregarBullets(actividadesTraducidas);
+        var showUp = showTraducido.toUpperCase();
+        var msg = templates[currentLang](nombre, showTraducido, lugar, hora, actividades, showUp, lugarUp);
+        navigator.clipboard.writeText(msg).then(function() {
+          mostrarCopiado(btn);
+        }).catch(function() {
+          var ta = document.createElement('textarea');
+          ta.value = msg;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.focus(); ta.select();
+          try { document.execCommand('copy'); } catch(e) {}
+          document.body.removeChild(ta);
+          mostrarCopiado(btn);
+        });
+      }
+
+      function copiarMensajeFuego(actividadesPrincipalesTraducidas, actividadesTraducidas) {
+        var actividadesPrincipales = agregarBulletsCancelaciones(actividadesPrincipalesTraducidas);
+        var actividades = agregarBullets(actividadesTraducidas);
+        var msg = templatesFuego[currentLang](nombre, actividadesPrincipales, actividades);
+        navigator.clipboard.writeText(msg).then(function() {
+          mostrarCopiado(btn);
+        }).catch(function() {
+          var ta = document.createElement('textarea');
+          ta.value = msg;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.focus(); ta.select();
+          try { document.execCommand('copy'); } catch(e) {}
+          document.body.removeChild(ta);
+          mostrarCopiado(btn);
+        });
+      }
+
+      if (modoFuego) {
+        btn.textContent = '...';
+        btn.disabled = true;
+
+        var resultadosFuego = { principales: null, actividades: null };
+        var completadosFuego = { principales: false, actividades: false };
+        var pendientesFuego = 2;
+        var fuegoCopiado = false;
+
+        function marcarCompletoFuego(type, finalValue) {
+          if (completadosFuego[type]) return;
+          resultadosFuego[type] = finalValue;
+          completadosFuego[type] = true;
+          pendientesFuego--;
+          if (pendientesFuego !== 0) return;
+          if (fuegoCopiado) return;
+          fuegoCopiado = true;
+          btn.disabled = false;
+          btn.textContent = 'COPIAR';
+          copiarMensajeFuego(
+            resultadosFuego.principales || actPrinRaw,
+            resultadosFuego.actividades || actRaw
+          );
+        }
+
+        try {
+          google.script.run
+            .withSuccessHandler(function(actividadesPrincipalesTraducidas) {
+              marcarCompletoFuego('principales', actividadesPrincipalesTraducidas || actPrinRaw);
+            })
+            .withFailureHandler(function() {
+              marcarCompletoFuego('principales', actPrinRaw);
+            })
+            .traducirActividades(actPrinRaw, currentLang);
+        } catch(e) {
+          marcarCompletoFuego('principales', actPrinRaw);
+        }
+
+        try {
+          google.script.run
+            .withSuccessHandler(function(actividadesTraducidas) {
+              marcarCompletoFuego('actividades', actividadesTraducidas || actRaw);
+            })
+            .withFailureHandler(function() {
+              marcarCompletoFuego('actividades', actRaw);
+            })
+            .traducirActividades(actRaw, currentLang);
+        } catch(e) {
+          marcarCompletoFuego('actividades', actRaw);
+        }
+        return;
+      }
+
+      btn.textContent = '...';
+      btn.disabled = true;
+
+      var TOTAL_OPERACIONES = 2;
+      var resultados = { show: null, actividades: null };
+      var completados = { show: false, actividades: false };
+      var pendientes = TOTAL_OPERACIONES;
+
+      function marcarCompleto(type, finalValue) {
+        if (completados[type]) return;
+        resultados[type] = finalValue;
+        completados[type] = true;
+        pendientes--;
+        if (pendientes !== 0) return;
+        btn.disabled = false;
+        btn.textContent = 'COPIAR';
+        copiarMensaje(
+          resultados.show        || toTitleCase(showRaw),
+          resultados.actividades || actRaw
+        );
+      }
+
+      try {
+        google.script.run
+          .withSuccessHandler(function(showTraducido) {
+            marcarCompleto('show', showTraducido || toTitleCase(showRaw));
+          })
+          .withFailureHandler(function() {
+            marcarCompleto('show', toTitleCase(showRaw));
+          })
+          .traducirShow(showRaw, currentLang);
+      } catch(e) {
+        marcarCompleto('show', toTitleCase(showRaw));
+      }
+
+      try {
+        google.script.run
+          .withSuccessHandler(function(actividadesTraducidas) {
+            marcarCompleto('actividades', actividadesTraducidas || actRaw);
+          })
+          .withFailureHandler(function() {
+            marcarCompleto('actividades', actRaw);
+          })
+          .traducirActividades(actRaw, currentLang);
+      } catch(e) {
+        marcarCompleto('actividades', actRaw);
+      }
+    });
+
+    function mostrarCopiado(btn) {
+      btn.textContent = '\u00a1COPIADO!';
+      btn.classList.add('copiado');
+      setTimeout(function() {
+        btn.classList.remove('copiado');
+        btn.textContent = 'COPIAR';
+        btn.style.transform = 'scale(1.04) translateY(-2px)';
+        setTimeout(function() { btn.style.transform = ''; }, 400);
+      }, 900);
+    }
+
+    // ── SORTABLEJS ──
+    Sortable.create(document.getElementById('sortableList'), {
+      animation: 150,
+      handle: '.drag-handle',
+      ghostClass: 'sortable-chosen'
+    });
+
+    // ── BACKGROUND SLIDER ──
+    var slides = document.querySelectorAll('.bg-slide');
+    var currentSlide = 0;
+    setInterval(function() {
+      slides[currentSlide].classList.remove('active');
+      currentSlide = (currentSlide + 1) % slides.length;
+      slides[currentSlide].classList.add('active');
+    }, 5000);
+  </script>
+
+  <svg class="sr-only" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="goo">
+        <feGaussianBlur result="blur" in="SourceGraphic" stdDeviation="13"></feGaussianBlur>
+        <feColorMatrix result="goo" in="blur" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 13 -10" type="matrix"></feColorMatrix>
+        <feComposite in="goo" operator="atop"></feComposite>
+      </filter>
+      <filter id="remove-black" color-interpolation-filters="sRGB">
+        <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  -255 -255 -255 0 1" result="black-pixels"></feColorMatrix>
+        <feMorphology in="black-pixels" operator="dilate" radius="0.5" result="smoothed"></feMorphology>
+        <feComposite in="SourceGraphic" in2="smoothed" operator="out"></feComposite>
+      </filter>
+    </defs>
+  </svg>
+</body>
+</html>
