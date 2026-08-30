@@ -115,20 +115,13 @@
       text-align: center;
     }
 
-    /* ── TOP ACTIONS: LANGUAGE + COPY ── */
-    .top-actions-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-
     .lang-row {
       display: flex;
+      align-items: center;
       gap: 4px;
       justify-content: flex-start;
       flex-wrap: nowrap;
+      margin-bottom: 14px;
     }
 
     .btn-lang {
@@ -141,65 +134,39 @@
       font-weight: 600;
       letter-spacing: 1.5px;
       cursor: pointer;
-      transition: transform 0.45s cubic-bezier(0.34, 1.8, 0.64, 1),
-                  box-shadow 0.35s ease,
-                  background 0.25s ease,
-                  border-color 0.25s ease,
-                  color 0.25s ease;
       white-space: nowrap;
+      transition: background 0.25s ease,
+                  border-color 0.25s ease,
+                  color 0.25s ease,
+                  box-shadow 0.25s ease;
     }
 
-    .btn-lang:hover {
-      transform: scale(1.1) translateY(-3px);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.2);
+    .btn-lang:hover:not(.copiado-lang) {
+      transform: scale(1.08) translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
       border-color: rgba(50, 166, 154, 0.8);
       color: #c9ecf4;
     }
 
-    .btn-lang.active {
-      background: var(--selected-color);
-      border-color: var(--selected-color);
-      color: #ffffff;
-      box-shadow: 0 0 14px rgba(13, 198, 212, 0.5);
-    }
-
-    /* Botón copiar en la esquina derecha */
-    .btn-copiar {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 10px 20px;
-      min-width: 90px;
-      background: #184f5b;
-      color: #ffffff;
-      border: none;
-      border-radius: 10px;
-      font-family: 'Segoe UI', sans-serif;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      cursor: pointer;
-      white-space: nowrap;
-      overflow: visible;
-      text-overflow: clip;
-      transition: transform 0.45s cubic-bezier(0.34, 1.8, 0.64, 1),
-                  background 0.3s ease,
-                  box-shadow 0.3s ease;
-    }
-
-    .btn-copiar:hover {
-      transform: scale(1.04) translateY(-2px);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
-    }
-
-    .btn-copiar:active {
-      transform: scale(0.98);
-    }
-
-    .btn-copiar.copiado {
+    /* Estado "copiado": resaltado pero SIN cambio de tamaño base */
+    .btn-lang.copiado-lang {
       background: #00BFFF;
-      transform: scale(1.08) translateY(-2px);
-      box-shadow: 0 0 22px rgba(0, 191, 255, 0.8), 0 0 50px rgba(0, 191, 255, 0.5), 0 12px 24px rgba(0, 191, 255, 0.35);
+      border-color: #00BFFF;
+      color: #ffffff;
+      box-shadow: 0 0 22px rgba(0, 191, 255, 0.8), 0 0 50px rgba(0, 191, 255, 0.5);
+      cursor: default;
+    }
+
+    /* Bounce: escala 1 → 1.5 → 1, sin afectar el layout del contenedor */
+    @keyframes langBounce {
+      0%   { transform: scale(1);   }
+      35%  { transform: scale(1.5); }
+      65%  { transform: scale(1.4); }
+      100% { transform: scale(1);   }
+    }
+
+    .btn-lang.bounce {
+      animation: langBounce 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
 
     /* ── CONCIERGE SECTION ── */
@@ -647,16 +614,13 @@
         <div class="card-title">SHOWS MAYA</div>
       </div>
 
-      <!-- Languages + Copy button -->
-      <div class="top-actions-row">
-        <div class="lang-row">
-          <button class="btn-lang" data-lang="es">Español</button>
-          <button class="btn-lang" data-lang="en">Inglés</button>
-          <button class="btn-lang" data-lang="fr">Francés</button>
-          <button class="btn-lang" data-lang="de">Alemán</button>
-          <button class="btn-lang" data-lang="pt">Portugués</button>
-        </div>
-        <button class="btn-copiar" id="btnCopy">COPIAR</button>
+      <!-- Languages (cada uno copia directamente en su idioma) -->
+      <div class="lang-row">
+        <button class="btn-lang" data-lang="es" data-label="Español">Español</button>
+        <button class="btn-lang" data-lang="en" data-label="Inglés">Inglés</button>
+        <button class="btn-lang" data-lang="fr" data-label="Francés">Francés</button>
+        <button class="btn-lang" data-lang="de" data-label="Alemán">Alemán</button>
+        <button class="btn-lang" data-lang="pt" data-label="Portugués">Portugués</button>
       </div>
 
       <!-- Concierge Buttons -->
@@ -826,26 +790,168 @@
         .getDatosDiaActualShowsMaya();
     } catch(e) {}
 
-    // ── LANGUAGE ──
+    // ── LANGUAGE + COPY INTEGRADO ──
     var currentLang = 'es';
-    document.querySelectorAll('.btn-lang').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        var prev = document.querySelector('.btn-lang.active');
-        if (prev && prev !== btn) {
-          prev.classList.remove('active');
-          prev.style.transform = 'scale(1.0)';
-          setTimeout(function() { prev.style.transform = ''; }, 10);
-        }
-        if (btn.classList.contains('active')) {
-          btn.classList.remove('active');
-          currentLang = 'es';
-        } else {
-          btn.classList.add('active');
-          currentLang = btn.getAttribute('data-lang');
-          btn.style.transform = 'scale(1.18) translateY(-5px)';
-          setTimeout(function() { btn.style.transform = ''; }, 400);
-        }
+
+    function animarCopiado(btn, label) {
+      btn.textContent = 'Copiado';
+      btn.classList.add('copiado-lang', 'bounce');
+
+      btn.addEventListener('animationend', function onEnd() {
+        btn.classList.remove('bounce');
+        btn.removeEventListener('animationend', onEnd);
       });
+
+      setTimeout(function() {
+        btn.classList.remove('copiado-lang');
+        btn.textContent = label;
+      }, 1600);
+    }
+
+    function copiarTexto(mensaje) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(mensaje).catch(function() {
+          var ta = document.createElement('textarea');
+          ta.value = mensaje;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        });
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = mensaje;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+    }
+
+    function ejecutarCopiaConIdioma(btn) {
+      if (btn.classList.contains('copiado-lang')) return;
+
+      var lang  = btn.getAttribute('data-lang');
+      var label = btn.getAttribute('data-label');
+      currentLang = lang;
+
+      var nombre     = nombreSeleccionado || '[nombre del concierge]';
+      var showInput  = document.getElementById('inputShow').value.trim();
+      var lugarInput = document.getElementById('inputLugar').value.trim();
+      var horaInput  = document.getElementById('inputHora').value.trim();
+      var actInput   = document.getElementById('inputActividades').value.trim();
+      var actPrinInp = document.getElementById('inputActividadesPrincipales').value.trim();
+
+      if (!showInput && !lugarInput && !horaInput) {
+        animarCopiado(btn, label);
+        return;
+      }
+
+      var show = showInput || '[nombre del show]';
+      var lugar = lugarInput || '[lugar]';
+      var hora = horaInput || '[hora]';
+      var actividades = actInput || '[actividades]';
+      var actPrinc = actPrinInp || '[actividades principales]';
+
+      if (modoFuego) {
+        var resultadosFuego = { principales: null, actividades: null };
+        var completadosFuego = { principales: false, actividades: false };
+        var pendientesFuego = 2;
+        var fuegoCopiado = false;
+
+        function marcarCompletoFuego(type, finalValue) {
+          if (completadosFuego[type]) return;
+          resultadosFuego[type] = finalValue;
+          completadosFuego[type] = true;
+          pendientesFuego--;
+          if (pendientesFuego !== 0 || fuegoCopiado) return;
+          fuegoCopiado = true;
+          var fuegoTemplates = (typeof templates_fuego !== 'undefined' ? templates_fuego : (typeof templatesFuego !== 'undefined' ? templatesFuego : templates));
+          var templateFuego = fuegoTemplates[lang] || fuegoTemplates.es || templates[lang] || templates.es;
+          var msgFuego = templateFuego(nombre, agregarBulletsCancelaciones(resultadosFuego.principales || actPrinc), agregarBullets(resultadosFuego.actividades || actividades));
+          copiarTexto(msgFuego);
+          animarCopiado(btn, label);
+        }
+
+        try {
+          google.script.run
+            .withSuccessHandler(function(actividadesPrincipalesTraducidas) {
+              marcarCompletoFuego('principales', actividadesPrincipalesTraducidas || actPrinc);
+            })
+            .withFailureHandler(function() {
+              marcarCompletoFuego('principales', actPrinc);
+            })
+            .traducirActividades(actPrinc, lang);
+        } catch(e) {
+          marcarCompletoFuego('principales', actPrinc);
+        }
+
+        try {
+          google.script.run
+            .withSuccessHandler(function(actividadesTraducidas) {
+              marcarCompletoFuego('actividades', actividadesTraducidas || actividades);
+            })
+            .withFailureHandler(function() {
+              marcarCompletoFuego('actividades', actividades);
+            })
+            .traducirActividades(actividades, lang);
+        } catch(e) {
+          marcarCompletoFuego('actividades', actividades);
+        }
+        return;
+      }
+
+      var lugarLocalizado = conLugarLocalizado(lugar, lang);
+      var lugarUp = lugarUpperTraducido(lugar, lang);
+      var horaLimpia = hora.replace(/\s*(AM|PM|am|pm)\s*$/i, '').trim();
+      var horaFinal = horaLimpia ? (horaLimpia + ' PM') : hora;
+
+      var resultados = { show: null, actividades: null };
+      var completados = { show: false, actividades: false };
+      var pendientes = 2;
+
+      function marcarCompleto(type, finalValue) {
+        if (completados[type]) return;
+        resultados[type] = finalValue;
+        completados[type] = true;
+        pendientes--;
+        if (pendientes !== 0) return;
+        var actividadesBullets = agregarBullets(resultados.actividades || actividades);
+        var showFinal = resultados.show || toTitleCase(show);
+        var msg = templates[lang](nombre, showFinal, lugarLocalizado, horaFinal, actividadesBullets, showFinal.toUpperCase(), lugarUp);
+        copiarTexto(msg);
+        animarCopiado(btn, label);
+      }
+
+      try {
+        google.script.run
+          .withSuccessHandler(function(showTraducido) {
+            marcarCompleto('show', showTraducido || toTitleCase(show));
+          })
+          .withFailureHandler(function() {
+            marcarCompleto('show', toTitleCase(show));
+          })
+          .traducirShow(show, lang);
+      } catch(e) {
+        marcarCompleto('show', toTitleCase(show));
+      }
+
+      try {
+        google.script.run
+          .withSuccessHandler(function(actividadesTraducidas) {
+            marcarCompleto('actividades', actividadesTraducidas || actividades);
+          })
+          .withFailureHandler(function() {
+            marcarCompleto('actividades', actividades);
+          })
+          .traducirActividades(actividades, lang);
+      } catch(e) {
+        marcarCompleto('actividades', actividades);
+      }
+    }
+
+    document.querySelectorAll('.btn-lang').forEach(function(btn) {
+      btn.addEventListener('click', function() { ejecutarCopiaConIdioma(btn); });
     });
 
     // ── PM AUTOMÁTICO EN HORA ──
@@ -1130,174 +1236,6 @@
     });
 
     aplicarModoFuego();
-
-    // ── COPY BUTTON ──
-    document.getElementById('btnCopy').addEventListener('click', function() {
-      var nombre      = nombreSeleccionado || '[nombre del concierge]';
-      var showRaw     = document.getElementById('inputShow').value.trim()        || '[nombre del show]';
-      var lugarRaw    = document.getElementById('inputLugar').value.trim()       || '[lugar]';
-      var horaRaw     = document.getElementById('inputHora').value.trim()        || '[hora]';
-      var actRaw      = document.getElementById('inputActividades').value.trim() || '[actividades]';
-      var actPrinRaw  = document.getElementById('inputActividadesPrincipales').value.trim() || '[actividades principales]';
-
-      var hora = horaRaw.replace(/\s*(AM|PM|am|pm)\s*$/i, '').trim();
-      if (hora) hora = hora + ' PM';
-      else hora = horaRaw;
-
-      var lugar       = conLugarLocalizado(lugarRaw, currentLang);
-      var lugarUp     = lugarUpperTraducido(lugarRaw, currentLang);
-      var btn         = this;
-
-      function copiarMensaje(showTraducido, actividadesTraducidas) {
-        var actividades = agregarBullets(actividadesTraducidas);
-        var showUp = showTraducido.toUpperCase();
-        var msg = templates[currentLang](nombre, showTraducido, lugar, hora, actividades, showUp, lugarUp);
-        navigator.clipboard.writeText(msg).then(function() {
-          mostrarCopiado(btn);
-        }).catch(function() {
-          var ta = document.createElement('textarea');
-          ta.value = msg;
-          ta.style.position = 'fixed';
-          ta.style.opacity = '0';
-          document.body.appendChild(ta);
-          ta.focus(); ta.select();
-          try { document.execCommand('copy'); } catch(e) {}
-          document.body.removeChild(ta);
-          mostrarCopiado(btn);
-        });
-      }
-
-      function copiarMensajeFuego(actividadesPrincipalesTraducidas, actividadesTraducidas) {
-        var actividadesPrincipales = agregarBulletsCancelaciones(actividadesPrincipalesTraducidas);
-        var actividades = agregarBullets(actividadesTraducidas);
-        var msg = templatesFuego[currentLang](nombre, actividadesPrincipales, actividades);
-        navigator.clipboard.writeText(msg).then(function() {
-          mostrarCopiado(btn);
-        }).catch(function() {
-          var ta = document.createElement('textarea');
-          ta.value = msg;
-          ta.style.position = 'fixed';
-          ta.style.opacity = '0';
-          document.body.appendChild(ta);
-          ta.focus(); ta.select();
-          try { document.execCommand('copy'); } catch(e) {}
-          document.body.removeChild(ta);
-          mostrarCopiado(btn);
-        });
-      }
-
-      if (modoFuego) {
-        btn.textContent = '...';
-        btn.disabled = true;
-
-        var resultadosFuego = { principales: null, actividades: null };
-        var completadosFuego = { principales: false, actividades: false };
-        var pendientesFuego = 2;
-        var fuegoCopiado = false;
-
-        function marcarCompletoFuego(type, finalValue) {
-          if (completadosFuego[type]) return;
-          resultadosFuego[type] = finalValue;
-          completadosFuego[type] = true;
-          pendientesFuego--;
-          if (pendientesFuego !== 0) return;
-          if (fuegoCopiado) return;
-          fuegoCopiado = true;
-          btn.disabled = false;
-          btn.textContent = 'COPIAR';
-          copiarMensajeFuego(
-            resultadosFuego.principales || actPrinRaw,
-            resultadosFuego.actividades || actRaw
-          );
-        }
-
-        try {
-          google.script.run
-            .withSuccessHandler(function(actividadesPrincipalesTraducidas) {
-              marcarCompletoFuego('principales', actividadesPrincipalesTraducidas || actPrinRaw);
-            })
-            .withFailureHandler(function() {
-              marcarCompletoFuego('principales', actPrinRaw);
-            })
-            .traducirActividades(actPrinRaw, currentLang);
-        } catch(e) {
-          marcarCompletoFuego('principales', actPrinRaw);
-        }
-
-        try {
-          google.script.run
-            .withSuccessHandler(function(actividadesTraducidas) {
-              marcarCompletoFuego('actividades', actividadesTraducidas || actRaw);
-            })
-            .withFailureHandler(function() {
-              marcarCompletoFuego('actividades', actRaw);
-            })
-            .traducirActividades(actRaw, currentLang);
-        } catch(e) {
-          marcarCompletoFuego('actividades', actRaw);
-        }
-        return;
-      }
-
-      btn.textContent = '...';
-      btn.disabled = true;
-
-      var TOTAL_OPERACIONES = 2;
-      var resultados = { show: null, actividades: null };
-      var completados = { show: false, actividades: false };
-      var pendientes = TOTAL_OPERACIONES;
-
-      function marcarCompleto(type, finalValue) {
-        if (completados[type]) return;
-        resultados[type] = finalValue;
-        completados[type] = true;
-        pendientes--;
-        if (pendientes !== 0) return;
-        btn.disabled = false;
-        btn.textContent = 'COPIAR';
-        copiarMensaje(
-          resultados.show        || toTitleCase(showRaw),
-          resultados.actividades || actRaw
-        );
-      }
-
-      try {
-        google.script.run
-          .withSuccessHandler(function(showTraducido) {
-            marcarCompleto('show', showTraducido || toTitleCase(showRaw));
-          })
-          .withFailureHandler(function() {
-            marcarCompleto('show', toTitleCase(showRaw));
-          })
-          .traducirShow(showRaw, currentLang);
-      } catch(e) {
-        marcarCompleto('show', toTitleCase(showRaw));
-      }
-
-      try {
-        google.script.run
-          .withSuccessHandler(function(actividadesTraducidas) {
-            marcarCompleto('actividades', actividadesTraducidas || actRaw);
-          })
-          .withFailureHandler(function() {
-            marcarCompleto('actividades', actRaw);
-          })
-          .traducirActividades(actRaw, currentLang);
-      } catch(e) {
-        marcarCompleto('actividades', actRaw);
-      }
-    });
-
-    function mostrarCopiado(btn) {
-      btn.textContent = '\u00a1COPIADO!';
-      btn.classList.add('copiado');
-      setTimeout(function() {
-        btn.classList.remove('copiado');
-        btn.textContent = 'COPIAR';
-        btn.style.transform = 'scale(1.04) translateY(-2px)';
-        setTimeout(function() { btn.style.transform = ''; }, 400);
-      }, 900);
-    }
 
     // ── SORTABLEJS ──
     Sortable.create(document.getElementById('sortableList'), {
