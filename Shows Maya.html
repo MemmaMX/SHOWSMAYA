@@ -794,31 +794,31 @@
     var currentLang = 'es';
 
     function animarCopiado(btn, label) {
+      if (btn._copiadoTimeout) {
+        clearTimeout(btn._copiadoTimeout);
+      }
+      if (btn._bounceTimeout) {
+        clearTimeout(btn._bounceTimeout);
+      }
       btn.textContent = 'Copiado';
+      btn.classList.remove('bounce');
+      void btn.offsetWidth;
       btn.classList.add('copiado-lang', 'bounce');
 
-      btn.addEventListener('animationend', function onEnd() {
+      btn._bounceTimeout = setTimeout(function() {
         btn.classList.remove('bounce');
-        btn.removeEventListener('animationend', onEnd);
-      });
+        btn._bounceTimeout = null;
+      }, 600);
 
-      setTimeout(function() {
+      btn._copiadoTimeout = setTimeout(function() {
         btn.classList.remove('copiado-lang');
         btn.textContent = label;
+        btn._copiadoTimeout = null;
       }, 1600);
     }
 
     function copiarTexto(mensaje) {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(mensaje).catch(function() {
-          var ta = document.createElement('textarea');
-          ta.value = mensaje;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-        });
-      } else {
+      function fallbackCopy() {
         var ta = document.createElement('textarea');
         ta.value = mensaje;
         document.body.appendChild(ta);
@@ -826,6 +826,15 @@
         document.execCommand('copy');
         document.body.removeChild(ta);
       }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(mensaje).catch(function() {
+          fallbackCopy();
+        });
+      }
+
+      fallbackCopy();
+      return Promise.resolve();
     }
 
     function ejecutarCopiaConIdioma(btn) {
@@ -869,8 +878,9 @@
           var fuegoTemplates = (typeof templates_fuego !== 'undefined' ? templates_fuego : (typeof templatesFuego !== 'undefined' ? templatesFuego : templates));
           var templateFuego = fuegoTemplates[lang] || fuegoTemplates.es || templates[lang] || templates.es;
           var msgFuego = templateFuego(nombre, agregarBulletsCancelaciones(resultadosFuego.principales || actPrinc), agregarBullets(resultadosFuego.actividades || actividades));
-          copiarTexto(msgFuego);
-          animarCopiado(btn, label);
+          copiarTexto(msgFuego).then(function() {
+            animarCopiado(btn, label);
+          });
         }
 
         try {
@@ -903,8 +913,15 @@
 
       var lugarLocalizado = conLugarLocalizado(lugar, lang);
       var lugarUp = lugarUpperTraducido(lugar, lang);
-      var horaLimpia = hora.replace(/\s*(AM|PM|am|pm)\s*$/i, '').trim();
-      var horaFinal = horaLimpia ? (horaLimpia + ' PM') : hora;
+      var horaFinal;
+      if (/\s*(AM|PM|am|pm)\s*$/.test(hora)) {
+        horaFinal = hora.replace(/\s*(AM|PM|am|pm)\s*$/, function(_, meridiano) {
+          return ' ' + meridiano.toUpperCase();
+        }).trim();
+      } else {
+        var horaLimpia = hora.trim();
+        horaFinal = horaLimpia ? (horaLimpia + ' PM') : horaLimpia;
+      }
 
       var resultados = { show: null, actividades: null };
       var completados = { show: false, actividades: false };
@@ -919,8 +936,9 @@
         var actividadesBullets = agregarBullets(resultados.actividades || actividades);
         var showFinal = resultados.show || toTitleCase(show);
         var msg = templates[lang](nombre, showFinal, lugarLocalizado, horaFinal, actividadesBullets, showFinal.toUpperCase(), lugarUp);
-        copiarTexto(msg);
-        animarCopiado(btn, label);
+        copiarTexto(msg).then(function() {
+          animarCopiado(btn, label);
+        });
       }
 
       try {
