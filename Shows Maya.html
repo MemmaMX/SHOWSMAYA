@@ -14,6 +14,45 @@
       --sb-thumb-color: #6BAF8D;
       --sb-size: 8px;
     }
+    
+    /* ── VARIABLES DE TEMA ── */
+    :root {
+      --card-bg:            #ffffff;
+      --card-border:        rgba(50, 29, 255, 0.15);
+      --title-color:        #29292c;
+      --label-color:        #29292c;
+      --cancel-text-color:  #29292c;
+      --btn-chip-bg:        #321dff;
+      --btn-chip-text:      #ffffff;
+      --btn-chip-border:    #aeb3ff;
+      --btn-selected-bg:    #dbe8ff;
+      --btn-selected-text:  #203ab3;
+      --lang-active-bg:     #8083ff;
+      --lang-active-text:   #ffffff;
+      --copiado-bg:         #dbe8ff;
+      --copiado-text:       #203ab3;
+      --body-bg:            #f0f2ff;
+      --body-color:         #29292c;
+    }
+
+    body.dark-mode {
+      --card-bg:            rgba(10, 28, 38, 0.93);
+      --card-border:        rgba(50, 166, 154, 0.25);
+      --title-color:        #ffffff;
+      --label-color:        #ffffff;
+      --cancel-text-color:  #ffffff;
+      --btn-chip-bg:        rgba(24, 79, 91, 0.4);
+      --btn-chip-text:      #c9ecf4;
+      --btn-chip-border:    rgba(50, 166, 154, 0.4);
+      --btn-selected-bg:    var(--selected-color);
+      --btn-selected-text:  #ffffff;
+      --lang-active-bg:     var(--selected-color);
+      --lang-active-text:   #ffffff;
+      --copiado-bg:         #00BFFF;
+      --copiado-text:       #ffffff;
+      --body-bg:            hsl(223, 10%, 10%);
+      --body-color:         hsl(223, 10%, 90%);
+    }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -25,9 +64,12 @@
     body {
       height: 100%;
       width: 100%;
+      background-color: var(--body-bg);
+      color: var(--body-color);
       font-family: 'Segoe UI', sans-serif;
       overflow-y: auto;
       overflow-x: hidden;
+      transition: background-color 0.4s ease, color 0.4s ease;
     }
 
     /* ── SCROLLBAR CUSTOM ── */
@@ -88,17 +130,19 @@
 
     /* ── CARD ── */
     .card {
-      background: rgba(10, 28, 38, 0.93);
-      border: 1px solid rgba(50, 166, 154, 0.25);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 16px;
       padding: 24px 22px 22px;
       width: 520px;
       max-width: 100%;
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+      transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.3s ease;
     }
 
     /* ── HEADER ── */
     .card-header {
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -111,24 +155,66 @@
       font-weight: 700;
       letter-spacing: 5px;
       text-transform: uppercase;
-      color: #ffffff;
+      color: var(--title-color);
       text-align: center;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(50, 29, 255, 0.1);
+      border: 1.5px solid #aeb3ff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+      color: #321dff;
+    }
+
+    .theme-toggle:hover {
+      transform: scale(1.12);
+      background: rgba(50, 29, 255, 0.18);
+    }
+
+    .theme-toggle .icon-sun,
+    .theme-toggle .icon-moon {
+      width: 16px;
+      height: 16px;
+      transition: opacity 0.3s ease;
+    }
+
+    .theme-toggle .icon-sun  { display: none; }
+    .theme-toggle .icon-moon { display: block; }
+
+    body.dark-mode .theme-toggle .icon-sun  { display: block; }
+    body.dark-mode .theme-toggle .icon-moon { display: none; }
+    body.dark-mode .theme-toggle {
+      color: #c9ecf4;
+      background: rgba(201, 236, 244, 0.1);
+      border-color: rgba(201, 236, 244, 0.3);
     }
 
     .lang-row {
       display: flex;
       align-items: center;
-      gap: 4px;
-      justify-content: center;
-      flex-wrap: nowrap;
+      gap: 6px;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      width: 100%;
     }
 
     .btn-lang {
       padding: 5px 10px;
-      border: 1.5px solid rgba(50, 166, 154, 0.4);
+      border: 1.5px solid var(--btn-chip-border);
       border-radius: 8px;
-      background: rgba(24, 79, 91, 0.4);
-      color: #8fcfda;
+      background: var(--btn-chip-bg);
+      color: var(--btn-chip-text);
       font-size: 10px;
       font-weight: 600;
       letter-spacing: 1.5px;
@@ -140,20 +226,28 @@
                   box-shadow 0.25s ease;
     }
 
-    .btn-lang:hover:not(.copiado-lang) {
+    .btn-lang:hover:not(.copiado-lang):not(.lang-selected):not(.cargando-lang) {
       transform: scale(1.08) translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-      border-color: rgba(50, 166, 154, 0.8);
-      color: #c9ecf4;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      opacity: 0.88;
     }
 
-    /* Estado "copiado": resaltado pero SIN cambio de tamaño base */
     .btn-lang.copiado-lang {
-      background: #00BFFF;
-      border-color: #00BFFF;
-      color: #ffffff;
-      box-shadow: 0 0 22px rgba(0, 191, 255, 0.8), 0 0 50px rgba(0, 191, 255, 0.5);
+      background: var(--copiado-bg) !important;
+      border-color: var(--copiado-bg) !important;
+      color: var(--copiado-text) !important;
+      box-shadow: 0 0 22px rgba(219, 232, 255, 0.6), 0 0 50px rgba(219, 232, 255, 0.3);
       cursor: default;
+    }
+    body.dark-mode .btn-lang.copiado-lang {
+      box-shadow: 0 0 22px rgba(0, 191, 255, 0.8), 0 0 50px rgba(0, 191, 255, 0.5);
+    }
+
+    .btn-lang.lang-selected {
+      background: var(--lang-active-bg) !important;
+      border-color: var(--lang-active-bg) !important;
+      color: var(--lang-active-text) !important;
+      box-shadow: 0 0 12px rgba(128, 131, 255, 0.4);
     }
 
     /* Bounce: escala 1 → 1.5 → 1, sin afectar el layout del contenedor */
@@ -205,7 +299,7 @@
       font-size: 10px;
       font-weight: 600;
       letter-spacing: 2px;
-      color: #ffffff;
+      color: var(--label-color);
       text-transform: uppercase;
       margin-bottom: 8px;
     }
@@ -218,10 +312,10 @@
 
     .btn-concierge {
       padding: 6px 12px;
-      border: 1.5px solid rgba(50, 166, 154, 0.4);
+      border: 1.5px solid var(--btn-chip-border);
       border-radius: 8px;
-      background: rgba(24, 79, 91, 0.4);
-      color: #c9ecf4;
+      background: var(--btn-chip-bg);
+      color: var(--btn-chip-text);
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 1px;
@@ -241,9 +335,15 @@
     }
 
     .btn-concierge.selected {
-      background: var(--selected-color);
-      border-color: var(--selected-color);
-      color: #ffffff;
+      background: var(--btn-selected-bg) !important;
+      border-color: var(--btn-selected-bg) !important;
+      color: var(--btn-selected-text) !important;
+      box-shadow: 0 0 14px rgba(219, 232, 255, 0.5);
+    }
+    body.dark-mode .btn-concierge.selected {
+      background: var(--selected-color) !important;
+      border-color: var(--selected-color) !important;
+      color: #ffffff !important;
       box-shadow: 0 0 14px rgba(13, 198, 212, 0.5);
     }
 
@@ -428,7 +528,7 @@
       font-weight: 700;
       letter-spacing: 2px;
       text-transform: uppercase;
-      color: #ffffff;
+      color: var(--cancel-text-color);
     }
 
     .cancel-label[data-active='true'] {
@@ -639,6 +739,22 @@
       <!-- Header -->
       <div class="card-header">
         <div class="card-title">SHOWS MAYA</div>
+        <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" type="button">
+          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
       </div>
 
       <!-- Languages (cada uno copia directamente en su idioma) -->
@@ -879,6 +995,10 @@
       var lang  = btn.getAttribute('data-lang');
       var label = btn.getAttribute('data-label');
       currentLang = lang;
+      document.querySelectorAll('.btn-lang').forEach(function(b) {
+        b.classList.remove('lang-selected');
+      });
+      btn.classList.add('lang-selected');
 
       var nombre     = nombreSeleccionado || '[nombre del concierge]';
       var showInput  = document.getElementById('inputShow').value.trim();
@@ -1008,6 +1128,19 @@
     document.querySelectorAll('.btn-lang').forEach(function(btn) {
       btn.addEventListener('click', function() { ejecutarCopiaConIdioma(btn); });
     });
+
+    // ── DARK / LIGHT MODE TOGGLE ──
+    (function() {
+      var btn = document.getElementById('themeToggle');
+      var saved = localStorage.getItem('showsmaya-theme');
+      if (saved === 'dark') document.body.classList.add('dark-mode');
+
+      btn.addEventListener('click', function() {
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('showsmaya-theme',
+          document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+      });
+    })();
 
     // ── PM AUTOMÁTICO EN HORA ──
     document.getElementById('inputHora').addEventListener('blur', function() {
